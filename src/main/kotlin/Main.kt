@@ -7,7 +7,6 @@ import retrofit2.Response
 import com.google.gson.annotations.SerializedName
 import java.util.Scanner
 
-// مدل‌های داده برای دریافت پاسخ‌های API
 
 data class UserResponse(
     val login: String,
@@ -20,7 +19,6 @@ data class RepoResponse(
     val name: String
 )
 
-// مدل ترکیبی برای ذخیره اطلاعات کاربر به همراه لیست ریپوزیتوری‌ها
 data class GitHubUser(
     val username: String,
     val followers: Int,
@@ -29,7 +27,6 @@ data class GitHubUser(
     val repositories: List<String>
 )
 
-// تعریف اینترفیس Retrofit جهت فراخوانی API های گیت‌هاب
 interface GitHubApi {
     @GET("users/{username}")
     suspend fun getUser(@Path("username") username: String): Response<UserResponse>
@@ -38,7 +35,6 @@ interface GitHubApi {
     suspend fun getRepos(@Path("username") username: String): Response<List<RepoResponse>>
 }
 
-// شیء Singleton برای ایجاد نمونه Retrofit
 object GitHubClient {
     private val retrofit = Retrofit.Builder()
         .baseUrl("https://api.github.com/")
@@ -48,12 +44,9 @@ object GitHubClient {
     val api: GitHubApi = retrofit.create(GitHubApi::class.java)
 }
 
-// کلاس Repository جهت مدیریت درخواست‌های API و ذخیره اطلاعات در حافظه
 class GitHubRepository {
-    // حافظه به صورت Map برای جلوگیری از درخواست‌های تکراری
     private val cache = mutableMapOf<String, GitHubUser>()
 
-    // دریافت اطلاعات کاربر از API یا حافظه
     suspend fun getUser(username: String): GitHubUser? {
         if (cache.containsKey(username)) {
             println("اطلاعات کاربر از حافظه بازیابی شد.")
@@ -82,7 +75,6 @@ class GitHubRepository {
                 createdAt = user.createdAt,
                 repositories = repoNames
             )
-            // ذخیره اطلاعات در حافظه
             cache[username] = gitHubUser
             return gitHubUser
         } catch (e: Exception) {
@@ -91,20 +83,16 @@ class GitHubRepository {
         }
     }
 
-    // دریافت لیست کاربران موجود در حافظه
     fun getCachedUsers(): List<GitHubUser> = cache.values.toList()
 
-    // جستجو بر اساس نام کاربری در حافظه
     fun searchUser(username: String): GitHubUser? = cache[username]
 
-    // جستجو بر اساس نام ریپوزیتوری در بین اطلاعات موجود در حافظه
     fun searchByRepository(repoName: String): List<GitHubUser> =
         cache.values.filter { user ->
             user.repositories.any { it.contains(repoName, ignoreCase = true) }
         }
 }
 
-// تابع اصلی با منوی ترمینالی
 fun main() = runBlocking {
     val repository = GitHubRepository()
     val scanner = Scanner(System.`in`)
